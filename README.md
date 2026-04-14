@@ -23,7 +23,9 @@ jobs:
     steps:
       - uses: loilo-inc/actions-assign-bot-reviewers@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # Use a PAT or GitHub App token when assigning team reviewers.
+          # secrets.GITHUB_TOKEN is sufficient for user-only reviewers.
+          token: ${{ secrets.BOT_REVIEWER_TOKEN }}
           reviewers: "loilo-inc/server-reviewers"
 ```
 
@@ -31,20 +33,29 @@ jobs:
 
 | Name | Required | Default | Description |
 |------|----------|---------|-------------|
-| `token` | Yes | - | GitHub token (requires `pull-requests: write` permission) |
+| `token` | Yes | - | GitHub token (see [Token permissions](#token-permissions) below) |
 | `reviewers` | Yes | - | Reviewers to assign (comma-separated, supports both usernames and `org/team`) |
 | `exclude_bots` | No | `""` | Bots to exclude (comma-separated) |
+
+### Token permissions
+
+| Reviewer type | Required token | Required permissions |
+|---------------|---------------|---------------------|
+| **Users only** | `secrets.GITHUB_TOKEN` | `pull-requests: write` |
+| **Teams** (or mixed) | PAT or GitHub App token | `pull-requests: write` + `read:org` |
+
+> **Note:** `GITHUB_TOKEN` does not have organization-level visibility, so requesting team reviewers with it may result in a 422 error.
 
 ### `reviewers` examples
 
 ```yaml
-# Team only
+# Team only (requires PAT or GitHub App token)
 reviewers: "loilo-inc/server-reviewers"
 
-# Users only
+# Users only (GITHUB_TOKEN is sufficient)
 reviewers: "user1,user2"
 
-# Mixed
+# Mixed (requires PAT or GitHub App token)
 reviewers: "loilo-inc/server-reviewers,user1"
 ```
 
