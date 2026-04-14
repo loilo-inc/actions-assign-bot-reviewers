@@ -57,7 +57,7 @@ runs:
                 return;
               }
               const [org, slug] = parts;
-              if (org !== context.repo.owner) {
+              if (org.toLowerCase() !== context.repo.owner.toLowerCase()) {
                 core.setFailed(`Org "${org}" does not match repo owner "${context.repo.owner}"`);
                 return;
               }
