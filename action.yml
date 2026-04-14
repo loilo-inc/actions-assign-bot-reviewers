@@ -1,0 +1,77 @@
+name: Assign reviewers for Bot PRs
+description: Bot が作成した PR にレビュアーを自動アサインする
+
+inputs:
+  token:
+    description: "GitHub token (pull-requests: write 権限が必要)"
+    required: true
+  reviewers:
+    description: "アサインするレビュアー（カンマ区切り、ユーザー名・org/team 混在可）"
+    required: true
+  exclude_bots:
+    description: "除外するBot（カンマ区切り、例: claude[bot]）"
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Assign reviewers if PR author is a Bot
+      uses: actions/github-script@v8
+      env:
+        INPUT_REVIEWERS: ${{ inputs.reviewers }}
+        INPUT_EXCLUDE_BOTS: ${{ inputs.exclude_bots }}
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          const pr = context.payload.pull_request;
+          if (!pr) {
+            core.warning('pull_request イベント以外では動作しません');
+            return;
+          }
+
+          if (pr.user.type !== 'Bot') {
+            core.info(`PR author "${pr.user.login}" は Bot ではないためスキップ`);
+            return;
+          }
+
+          const excludeBots = (process.env.INPUT_EXCLUDE_BOTS || '')
+            .split(',').map(s => s.trim()).filter(Boolean);
+
+          if (excludeBots.includes(pr.user.login)) {
+            core.info(`PR author "${pr.user.login}" は除外リストに含まれるためスキップ`);
+            return;
+          }
+
+          const entries = (process.env.INPUT_REVIEWERS || '')
+            .split(',').map(s => s.trim()).filter(Boolean);
+
+          const reviewers = [];
+          const teamSlugs = [];
+          for (const entry of entries) {
+            if (entry.includes('/')) {
+              // "org/team" → slug 部分のみ抽出
+              teamSlugs.push(entry.split('/').pop());
+            } else {
+              reviewers.push(entry);
+            }
+          }
+
+          if (reviewers.length === 0 && teamSlugs.length === 0) {
+            core.warning('reviewers が空です');
+            return;
+          }
+
+          core.info(`Bot "${pr.user.login}" の PR #${pr.number} にレビュアーをアサイン`);
+          core.info(`  users: ${reviewers.join(', ') || '(なし)'}`);
+          core.info(`  teams: ${teamSlugs.join(', ') || '(なし)'}`);
+
+          await github.rest.pulls.requestReviewers({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: pr.number,
+            reviewers,
+            team_reviewers: teamSlugs,
+          });
+
+          core.info('レビュアーのアサインが完了しました');
