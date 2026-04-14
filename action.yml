@@ -46,13 +46,27 @@ runs:
           const entries = (process.env.INPUT_REVIEWERS || '')
             .split(',').map(s => s.trim()).filter(Boolean);
 
+          const validName = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
           const reviewers = [];
           const teamSlugs = [];
           for (const entry of entries) {
             if (entry.includes('/')) {
-              // "org/team" → extract slug only
-              teamSlugs.push(entry.split('/').pop());
+              const parts = entry.split('/');
+              if (parts.length !== 2 || !validName.test(parts[0]) || !validName.test(parts[1])) {
+                core.setFailed(`Invalid team entry: "${entry}" (expected "org/team-slug")`);
+                return;
+              }
+              const [org, slug] = parts;
+              if (org.toLowerCase() !== context.repo.owner.toLowerCase()) {
+                core.setFailed(`Org "${org}" does not match repo owner "${context.repo.owner}"`);
+                return;
+              }
+              teamSlugs.push(slug);
             } else {
+              if (!validName.test(entry)) {
+                core.setFailed(`Invalid reviewer username: "${entry}"`);
+                return;
+              }
               reviewers.push(entry);
             }
           }
@@ -66,12 +80,20 @@ runs:
           core.info(`  users: ${reviewers.join(', ') || '(none)'}`);
           core.info(`  teams: ${teamSlugs.join(', ') || '(none)'}`);
 
-          await github.rest.pulls.requestReviewers({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            pull_number: pr.number,
-            reviewers,
-            team_reviewers: teamSlugs,
-          });
+          try {
+            await github.rest.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              reviewers,
+              team_reviewers: teamSlugs,
+            });
+          } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error);
+            const status = error?.status ? ` (HTTP ${error.status})` : '';
+            const details = error?.response?.data ? ` - ${JSON.stringify(error.response.data)}` : '';
+            core.setFailed(`Failed to assign reviewers${status}: ${msg}${details}`);
+            return;
+          }
 
           core.info('Reviewers assigned successfully');
