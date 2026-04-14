@@ -46,7 +46,7 @@ runs:
           const entries = (process.env.INPUT_REVIEWERS || '')
             .split(',').map(s => s.trim()).filter(Boolean);
 
-          const validName = /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/;
+          const validName = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
           const reviewers = [];
           const teamSlugs = [];
           for (const entry of entries) {
