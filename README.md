@@ -1,10 +1,10 @@
 # actions-assign-bot-reviewers
 
-Bot が作成した PR にレビュアーを自動アサインする GitHub Composite Action。
+A GitHub Composite Action that automatically assigns reviewers when a bot creates a pull request.
 
-CODEOWNERS の代替として、Bot PR のみにレビュアーを割り当てたい場合に使用します。
+Use this as a replacement for CODEOWNERS when you only want reviewers assigned to bot-created PRs.
 
-## 使い方
+## Usage
 
 ```yaml
 # .github/workflows/assign-bot-reviewers.yml
@@ -31,35 +31,35 @@ jobs:
 
 | Name | Required | Default | Description |
 |------|----------|---------|-------------|
-| `token` | Yes | - | GitHub token (`pull-requests: write` 権限が必要) |
-| `reviewers` | Yes | - | アサインするレビュアー（カンマ区切り、ユーザー名・`org/team` 混在可） |
-| `exclude_bots` | No | `""` | 除外する Bot（カンマ区切り） |
+| `token` | Yes | - | GitHub token (requires `pull-requests: write` permission) |
+| `reviewers` | Yes | - | Reviewers to assign (comma-separated, supports both usernames and `org/team`) |
+| `exclude_bots` | No | `""` | Bots to exclude (comma-separated) |
 
-### `reviewers` の指定例
+### `reviewers` examples
 
 ```yaml
-# チームのみ
+# Team only
 reviewers: "loilo-inc/server-reviewers"
 
-# ユーザーのみ
+# Users only
 reviewers: "user1,user2"
 
-# 混在
+# Mixed
 reviewers: "loilo-inc/server-reviewers,user1"
 ```
 
-### `exclude_bots` の指定例
+### `exclude_bots` examples
 
-他のレビューフロー（例: Claude Code の AI レビューループ）が存在する Bot を除外する場合に使用します。
+Use this to skip bots that have their own review flow (e.g. Claude Code's AI review loop).
 
 ```yaml
 exclude_bots: "claude[bot]"
 ```
 
-## job レベルのフィルタについて
+## Job-level filter
 
-`if: github.event.pull_request.user.type == 'Bot'` を job レベルに設定することで、人間の PR では job 自体が起動せず runner のコストを節約できます。Action 内部にも同じ判定がありますが、job レベルのフィルタとの併用を推奨します。
+Adding `if: github.event.pull_request.user.type == 'Bot'` at the job level prevents the runner from starting for human PRs, saving runner costs. The action also checks internally, but combining both is recommended.
 
-## ライセンス
+## License
 
 MIT
