@@ -17,7 +17,7 @@ runs:
   using: composite
   steps:
     - name: Assign reviewers if PR author is a Bot
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       env:
         INPUT_REVIEWERS: ${{ inputs.reviewers }}
         INPUT_EXCLUDE_BOTS: ${{ inputs.exclude_bots }}
