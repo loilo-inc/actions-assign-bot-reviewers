@@ -46,11 +46,15 @@ runs:
           const entries = (process.env.INPUT_REVIEWERS || '')
             .split(',').map(s => s.trim()).filter(Boolean);
 
+          const validEntry = /^[\w.\-]+(?:\/[\w.\-]+)?$/;
           const reviewers = [];
           const teamSlugs = [];
           for (const entry of entries) {
+            if (!validEntry.test(entry)) {
+              core.setFailed(`Invalid reviewer entry: "${entry}"`);
+              return;
+            }
             if (entry.includes('/')) {
-              // "org/team" → extract slug only
               teamSlugs.push(entry.split('/').pop());
             } else {
               reviewers.push(entry);
@@ -66,12 +70,18 @@ runs:
           core.info(`  users: ${reviewers.join(', ') || '(none)'}`);
           core.info(`  teams: ${teamSlugs.join(', ') || '(none)'}`);
 
-          await github.rest.pulls.requestReviewers({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            pull_number: pr.number,
-            reviewers,
-            team_reviewers: teamSlugs,
-          });
+          try {
+            await github.rest.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              reviewers,
+              team_reviewers: teamSlugs,
+            });
+          } catch (error) {
+            const status = error.status ? ` (HTTP ${error.status})` : '';
+            core.setFailed(`Failed to assign reviewers${status}: ${error.message}`);
+            return;
+          }
 
           core.info('Reviewers assigned successfully');
