@@ -78,7 +78,7 @@ runs:
 
           // Check for existing non-bot reviewers (both pending requests and submitted reviews)
           try {
-            const [{ data: { users: requestedUsers } }, { data: submittedReviews }] = await Promise.all([
+            const [{ data: { users: requestedUsers, teams: requestedTeams } }, { data: submittedReviews }] = await Promise.all([
               github.rest.pulls.listRequestedReviewers({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -92,16 +92,23 @@ runs:
             ]);
 
             const humanRequested = requestedUsers.filter(u => u.type !== 'Bot');
-            const humanReviewed = submittedReviews.filter(r => r.user && r.user.type !== 'Bot');
+            const activeReviewStates = new Set(['APPROVED', 'CHANGES_REQUESTED', 'PENDING']);
+            const humanReviewed = submittedReviews.filter(r =>
+              r.user && r.user.type !== 'Bot' && activeReviewStates.has(r.state)
+            );
             const humanReviewerLogins = [
               ...new Set([
                 ...humanRequested.map(u => u.login),
                 ...humanReviewed.map(r => r.user.login),
               ]),
             ];
+            const teamNames = requestedTeams.map(t => t.slug);
 
-            if (humanReviewerLogins.length > 0) {
-              core.info(`Non-bot reviewers already present: ${humanReviewerLogins.join(', ')}. Skipping assignment.`);
+            if (humanReviewerLogins.length > 0 || teamNames.length > 0) {
+              const parts = [];
+              if (humanReviewerLogins.length > 0) parts.push(`users: ${humanReviewerLogins.join(', ')}`);
+              if (teamNames.length > 0) parts.push(`teams: ${teamNames.join(', ')}`);
+              core.info(`Non-bot reviewers already present (${parts.join('; ')}). Skipping assignment.`);
               return;
             }
           } catch (error) {
