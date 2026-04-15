@@ -8,7 +8,7 @@ inputs:
   reviewers:
     description: "Reviewers to assign (comma-separated, supports both usernames and org/team)"
     required: true
-  exclude_bots:
+  exclude-bots:
     description: "Bots to exclude (comma-separated, e.g. claude[bot])"
     required: false
     default: ""
@@ -20,7 +20,7 @@ runs:
       uses: actions/github-script@v9
       env:
         INPUT_REVIEWERS: ${{ inputs.reviewers }}
-        INPUT_EXCLUDE_BOTS: ${{ inputs.exclude_bots }}
+        INPUT_EXCLUDE_BOTS: ${{ inputs.exclude-bots }}
       with:
         github-token: ${{ inputs.token }}
         script: |
