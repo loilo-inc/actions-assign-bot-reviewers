@@ -92,7 +92,7 @@ runs:
             ]);
 
             const humanRequested = requestedUsers.filter(u => u.type !== 'Bot');
-            const activeReviewStates = new Set(['APPROVED', 'CHANGES_REQUESTED', 'PENDING']);
+            const activeReviewStates = new Set(['APPROVED', 'CHANGES_REQUESTED', 'PENDING', 'COMMENTED']);
             const humanReviewed = submittedReviews.filter(r =>
               r.user && r.user.type !== 'Bot' && activeReviewStates.has(r.state)
             );
