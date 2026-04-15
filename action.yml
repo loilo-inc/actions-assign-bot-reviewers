@@ -85,12 +85,12 @@ runs:
             });
 
             const humanRequested = requestedUsers.filter(u => u.type !== 'Bot');
-            const teamNames = requestedTeams.map(t => t.slug);
+            const requestedTeamSlugs = requestedTeams.map(t => t.slug);
 
-            if (humanRequested.length > 0 || teamNames.length > 0) {
+            if (humanRequested.length > 0 || requestedTeamSlugs.length > 0) {
               const parts = [];
               if (humanRequested.length > 0) parts.push(`users: ${humanRequested.map(u => u.login).join(', ')}`);
-              if (teamNames.length > 0) parts.push(`teams: ${teamNames.join(', ')}`);
+              if (requestedTeamSlugs.length > 0) parts.push(`teams: ${requestedTeamSlugs.join(', ')}`);
               core.info(`Non-bot reviewers already requested (${parts.join('; ')}). Skipping assignment.`);
               return;
             }
