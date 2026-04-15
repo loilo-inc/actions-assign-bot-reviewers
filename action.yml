@@ -76,46 +76,22 @@ runs:
             return;
           }
 
-          // Check for existing non-bot reviewers (both pending requests and submitted reviews)
+          // Check for existing non-bot reviewer requests
           try {
-            const [{ data: { users: requestedUsers, teams: requestedTeams } }, { data: submittedReviews }] = await Promise.all([
-              github.rest.pulls.listRequestedReviewers({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: pr.number,
-              }),
-              github.rest.pulls.listReviews({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: pr.number,
-              }),
-            ]);
+            const { data: { users: requestedUsers, teams: requestedTeams } } = await github.rest.pulls.listRequestedReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+            });
 
             const humanRequested = requestedUsers.filter(u => u.type !== 'Bot');
-            const activeReviewStates = new Set(['APPROVED', 'CHANGES_REQUESTED', 'PENDING', 'COMMENTED']);
-            // Reduce to latest review per user to avoid stale history blocking assignment
-            const latestByUser = new Map();
-            for (const r of submittedReviews) {
-              if (!r.user || r.user.type === 'Bot') continue;
-              const prev = latestByUser.get(r.user.login);
-              if (!prev || new Date(r.submitted_at) > new Date(prev.submitted_at)) {
-                latestByUser.set(r.user.login, r);
-              }
-            }
-            const humanReviewed = [...latestByUser.values()].filter(r => activeReviewStates.has(r.state));
-            const humanReviewerLogins = [
-              ...new Set([
-                ...humanRequested.map(u => u.login),
-                ...humanReviewed.map(r => r.user.login),
-              ]),
-            ];
             const teamNames = requestedTeams.map(t => t.slug);
 
-            if (humanReviewerLogins.length > 0 || teamNames.length > 0) {
+            if (humanRequested.length > 0 || teamNames.length > 0) {
               const parts = [];
-              if (humanReviewerLogins.length > 0) parts.push(`users: ${humanReviewerLogins.join(', ')}`);
+              if (humanRequested.length > 0) parts.push(`users: ${humanRequested.map(u => u.login).join(', ')}`);
               if (teamNames.length > 0) parts.push(`teams: ${teamNames.join(', ')}`);
-              core.info(`Non-bot reviewers already present (${parts.join('; ')}). Skipping assignment.`);
+              core.info(`Non-bot reviewers already requested (${parts.join('; ')}). Skipping assignment.`);
               return;
             }
           } catch (error) {
