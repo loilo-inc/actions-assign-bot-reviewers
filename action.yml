@@ -76,6 +76,29 @@ runs:
             return;
           }
 
+          // Check for existing non-bot reviewer requests
+          try {
+            const { data: { users: requestedUsers, teams: requestedTeams } } = await github.rest.pulls.listRequestedReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+            });
+
+            const humanRequested = requestedUsers.filter(u => u.type !== 'Bot');
+            const requestedTeamSlugs = requestedTeams.map(t => t.slug);
+
+            if (humanRequested.length > 0 || requestedTeamSlugs.length > 0) {
+              const parts = [];
+              if (humanRequested.length > 0) parts.push(`users: ${humanRequested.map(u => u.login).join(', ')}`);
+              if (requestedTeamSlugs.length > 0) parts.push(`teams: ${requestedTeamSlugs.join(', ')}`);
+              core.info(`Non-bot reviewers already requested (${parts.join('; ')}). Skipping assignment.`);
+              return;
+            }
+          } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error);
+            core.warning(`Failed to check existing reviewers: ${msg}. Proceeding with assignment.`);
+          }
+
           core.info(`Assigning reviewers to PR #${pr.number} by bot "${pr.user.login}"`);
           core.info(`  users: ${reviewers.join(', ') || '(none)'}`);
           core.info(`  teams: ${teamSlugs.join(', ') || '(none)'}`);
