@@ -50,7 +50,7 @@ If you only assign **individual users** (no teams), `secrets.GITHUB_TOKEN` is su
 |------|----------|---------|-------------|
 | `token` | Yes | - | GitHub token (see [Token permissions](#token-permissions) below) |
 | `reviewers` | Yes | - | Reviewers to assign (comma-separated, supports both usernames and `org/team`) |
-| `exclude_bots` | No | `""` | Bots to exclude (comma-separated) |
+| `exclude-bots` | No | `""` | Bots to exclude (comma-separated) |
 
 ### Token permissions
 
@@ -74,12 +74,12 @@ reviewers: "user1,user2"
 reviewers: "loilo-inc/server-reviewers,user1"
 ```
 
-### `exclude_bots` examples
+### `exclude-bots` examples
 
 Use this to skip bots that have their own review flow (e.g. Claude Code's AI review loop).
 
 ```yaml
-exclude_bots: "claude[bot]"
+exclude-bots: "claude[bot]"
 ```
 
 ## Job-level filter
