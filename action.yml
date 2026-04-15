@@ -76,6 +76,34 @@ runs:
             return;
           }
 
+          // Check for existing non-bot reviewers (both pending requests and submitted reviews)
+          const [{ data: { users: requestedUsers } }, { data: submittedReviews }] = await Promise.all([
+            github.rest.pulls.listRequestedReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+            }),
+            github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+            }),
+          ]);
+
+          const humanRequested = requestedUsers.filter(u => u.type !== 'Bot');
+          const humanReviewed = submittedReviews.filter(r => r.user && r.user.type !== 'Bot');
+          const humanReviewerLogins = [
+            ...new Set([
+              ...humanRequested.map(u => u.login),
+              ...humanReviewed.map(r => r.user.login),
+            ]),
+          ];
+
+          if (humanReviewerLogins.length > 0) {
+            core.info(`Non-bot reviewers already present: ${humanReviewerLogins.join(', ')}. Skipping assignment.`);
+            return;
+          }
+
           core.info(`Assigning reviewers to PR #${pr.number} by bot "${pr.user.login}"`);
           core.info(`  users: ${reviewers.join(', ') || '(none)'}`);
           core.info(`  teams: ${teamSlugs.join(', ') || '(none)'}`);
