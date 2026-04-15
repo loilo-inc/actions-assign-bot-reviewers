@@ -21,8 +21,16 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      # Generate a GitHub App token for team reviewer assignment.
-      # GITHUB_TOKEN lacks read:org, so a GitHub App or PAT is required.
+      - uses: loilo-inc/actions-assign-bot-reviewers@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          reviewers: "user1,user2"
+```
+
+If you assign **team reviewers**, a GitHub App token or PAT with `read:org` is required:
+
+```yaml
+    steps:
       - uses: actions/create-github-app-token@v3
         id: app-token
         with:
@@ -33,15 +41,6 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
           reviewers: "loilo-inc/server-reviewers"
-```
-
-If you only assign **individual users** (no teams), `secrets.GITHUB_TOKEN` is sufficient:
-
-```yaml
-      - uses: loilo-inc/actions-assign-bot-reviewers@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          reviewers: "user1,user2"
 ```
 
 ## Inputs
