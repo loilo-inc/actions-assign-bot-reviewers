@@ -30,7 +30,7 @@ runs:
         github-token: ${{ inputs.token }}
         script: |
           let pr = context.payload.pull_request;
-          const inputPrNumber = process.env.INPUT_PR_NUMBER;
+          const inputPrNumber = (process.env.INPUT_PR_NUMBER || '').trim();
 
           if (!pr && inputPrNumber) {
             const prNumber = Number(inputPrNumber);
