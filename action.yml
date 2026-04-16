@@ -53,10 +53,11 @@ runs:
           }
 
           if (!pr) {
-            if (context.eventName === 'pull_request') {
-              core.warning('No pull_request data found in event payload');
+            const msg = 'No pull_request in event payload and no pr-number input provided';
+            if (context.eventName === 'workflow_call') {
+              core.setFailed(`${msg}. Set the pr-number input when using this action via workflow_call.`);
             } else {
-              core.setFailed('No pull_request in event payload. Set the pr-number input when using this action outside of pull_request events.');
+              core.warning(msg);
             }
             return;
           }
