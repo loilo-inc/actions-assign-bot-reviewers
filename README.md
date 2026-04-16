@@ -51,6 +51,7 @@ If you only assign **individual users** (no teams), `secrets.GITHUB_TOKEN` is su
 | `token` | Yes | - | GitHub token (see [Token permissions](#token-permissions) below) |
 | `reviewers` | Yes | - | Reviewers to assign (comma-separated, supports both usernames and `org/team`) |
 | `exclude-bots` | No | `""` | Bots to exclude (comma-separated) |
+| `pr-number` | No | `""` | PR number to assign reviewers to (required for `workflow_call`; omit for `pull_request` events) |
 
 ### Token permissions
 
@@ -80,6 +81,32 @@ Use this to skip bots that have their own review flow (e.g. Claude Code's AI rev
 
 ```yaml
 exclude-bots: "claude[bot]"
+```
+
+## Using with `workflow_call`
+
+When calling this action from a reusable workflow (e.g. after a code review step), `context.payload.pull_request` is unavailable. Pass the PR number explicitly via the `pr-number` input:
+
+```yaml
+# reusable-workflow.yml
+on:
+  workflow_call:
+    inputs:
+      pr-number:
+        required: true
+        type: number
+
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: loilo-inc/actions-assign-bot-reviewers@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          reviewers: "user1,user2"
+          pr-number: ${{ inputs.pr-number }}
 ```
 
 ## Job-level filter

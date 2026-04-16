@@ -33,12 +33,23 @@ runs:
           const inputPrNumber = process.env.INPUT_PR_NUMBER;
 
           if (!pr && inputPrNumber) {
-            const { data } = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: Number(inputPrNumber),
-            });
-            pr = data;
+            const prNumber = Number(inputPrNumber);
+            if (!Number.isInteger(prNumber) || prNumber <= 0) {
+              core.setFailed(`Invalid pr-number: "${inputPrNumber}" (must be a positive integer)`);
+              return;
+            }
+            try {
+              const { data } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+              });
+              pr = data;
+            } catch (error) {
+              const msg = error instanceof Error ? error.message : String(error);
+              core.setFailed(`Failed to fetch PR #${inputPrNumber}: ${msg}`);
+              return;
+            }
           }
 
           if (!pr) {
