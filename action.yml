@@ -12,6 +12,10 @@ inputs:
     description: "Bots to exclude (comma-separated, e.g. claude[bot])"
     required: false
     default: ""
+  pr-number:
+    description: "PR number to assign reviewers to. If omitted, uses context.payload.pull_request (requires pull_request event)"
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -21,12 +25,24 @@ runs:
       env:
         INPUT_REVIEWERS: ${{ inputs.reviewers }}
         INPUT_EXCLUDE_BOTS: ${{ inputs.exclude-bots }}
+        INPUT_PR_NUMBER: ${{ inputs.pr-number }}
       with:
         github-token: ${{ inputs.token }}
         script: |
-          const pr = context.payload.pull_request;
+          let pr = context.payload.pull_request;
+          const inputPrNumber = process.env.INPUT_PR_NUMBER;
+
+          if (!pr && inputPrNumber) {
+            const { data } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: Number(inputPrNumber),
+            });
+            pr = data;
+          }
+
           if (!pr) {
-            core.warning('This action only works with pull_request events');
+            core.warning('No pull_request in event payload and no pr-number input provided');
             return;
           }
 
