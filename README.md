@@ -52,10 +52,22 @@ assignment (and fetching a GitHub App token from secrets) fails. Using
 `pull_request_target` runs the workflow against the base branch with full
 token permissions and secret access.
 
-This action only reads PR metadata from `github.event.pull_request` and calls
-the GitHub API — it never checks out or executes PR code — so it is safe to
-run under `pull_request_target`. Do **not** add a `checkout` step that pulls
-the PR's head ref into this workflow.
+Because `pull_request_target` exposes write-scoped tokens and secrets, you
+must keep the workflow free of any untrusted PR content. To use it safely:
+
+- **Do not** add a `checkout` step that pulls the PR's head ref, and do not
+  run scripts, build tools, or installers from the PR branch.
+- **Do not** interpolate raw PR fields (title, body, branch name, commit
+  messages, author name/email) into `run:` commands. Pass them via `env:`
+  and quote the variables.
+- **Pin every `uses:`** to a trusted reference — a release tag from a
+  publisher you trust, or a commit SHA for stricter supply-chain control.
+  A compromised third-party action running under `pull_request_target`
+  would have access to your secrets.
+
+This action only reads PR metadata from `github.event.pull_request` and
+calls the GitHub API — it does not check out or execute PR code — so it
+satisfies the first two rules by construction.
 
 ## Inputs
 
