@@ -48,9 +48,11 @@ If you only assign **individual users** (no teams), `secrets.GITHUB_TOKEN` is su
 
 Dependabot-triggered workflows on the `pull_request` event always receive a
 read-only `GITHUB_TOKEN` and cannot access repository secrets, so reviewer
-assignment (and fetching a GitHub App token from secrets) fails. Using
-`pull_request_target` runs the workflow against the base branch with full
-token permissions and secret access.
+assignment (and fetching a GitHub App token from secrets) fails.
+`pull_request_target` runs the workflow against the base branch and allows
+access to repository secrets; any required `GITHUB_TOKEN` write scopes must
+still be granted via your repository Actions settings and the workflow or
+job `permissions:` block.
 
 Because `pull_request_target` exposes write-scoped tokens and secrets, you
 must keep the workflow free of any untrusted PR content. To use it safely:
