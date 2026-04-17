@@ -11,7 +11,7 @@ Use this as a replacement for CODEOWNERS when you only want reviewers assigned t
 name: Assign reviewers for Bot PRs
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, reopened]
 
 jobs:
@@ -43,6 +43,19 @@ If you only assign **individual users** (no teams), `secrets.GITHUB_TOKEN` is su
           token: ${{ secrets.GITHUB_TOKEN }}
           reviewers: "user1,user2"
 ```
+
+### Why `pull_request_target`?
+
+Dependabot-triggered workflows on the `pull_request` event always receive a
+read-only `GITHUB_TOKEN` and cannot access repository secrets, so reviewer
+assignment (and fetching a GitHub App token from secrets) fails. Using
+`pull_request_target` runs the workflow against the base branch with full
+token permissions and secret access.
+
+This action only reads PR metadata from `github.event.pull_request` and calls
+the GitHub API — it never checks out or executes PR code — so it is safe to
+run under `pull_request_target`. Do **not** add a `checkout` step that pulls
+the PR's head ref into this workflow.
 
 ## Inputs
 
