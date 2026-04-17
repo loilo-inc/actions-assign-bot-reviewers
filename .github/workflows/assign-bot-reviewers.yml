@@ -1,7 +1,7 @@
 name: Assign reviewers for Bot PRs
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, reopened]
 
 jobs:
@@ -11,7 +11,7 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - uses: loilo-inc/actions-assign-bot-reviewers@main
+      - uses: loilo-inc/actions-assign-bot-reviewers@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           reviewers: "TomoakiMizuno"

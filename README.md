@@ -11,7 +11,7 @@ Use this as a replacement for CODEOWNERS when you only want reviewers assigned t
 name: Assign reviewers for Bot PRs
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, reopened]
 
 jobs:
@@ -43,6 +43,33 @@ If you only assign **individual users** (no teams), `secrets.GITHUB_TOKEN` is su
           token: ${{ secrets.GITHUB_TOKEN }}
           reviewers: "user1,user2"
 ```
+
+### Why `pull_request_target`?
+
+Dependabot-triggered workflows on the `pull_request` event always receive a
+read-only `GITHUB_TOKEN` and cannot access repository secrets, so reviewer
+assignment (and fetching a GitHub App token from secrets) fails.
+`pull_request_target` runs the workflow against the base branch and allows
+access to repository secrets; any required `GITHUB_TOKEN` write scopes must
+still be granted via your repository Actions settings and the workflow or
+job `permissions:` block.
+
+Because `pull_request_target` exposes write-scoped tokens and secrets, you
+must keep the workflow free of any untrusted PR content. To use it safely:
+
+- **Do not** add a `checkout` step that pulls the PR's head ref, and do not
+  run scripts, build tools, or installers from the PR branch.
+- **Do not** interpolate raw PR fields (title, body, branch name, commit
+  messages, author name/email) into `run:` commands. Pass them via `env:`
+  and quote the variables.
+- **Pin every `uses:`** to a trusted reference — a release tag from a
+  publisher you trust, or a commit SHA for stricter supply-chain control.
+  A compromised third-party action running under `pull_request_target`
+  would have access to your secrets.
+
+This action only reads PR metadata from `github.event.pull_request` and
+calls the GitHub API — it does not check out or execute PR code — so it
+satisfies the first two rules by construction.
 
 ## Inputs
 
